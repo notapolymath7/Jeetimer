@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JEE Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #06080f;
+  --surface: #0c1120;
+  --surface2: #111827;
+  --border: rgba(99,179,255,0.12);
+  --glow: rgba(99,179,255,0.18);
+  --blue: #63b3ff;
+  --blue-dim: rgba(99,179,255,0.08);
+  --text: #e8edf8;
+  --muted: #8ba5c4;
+  --dim: #1e2a3a;
+
+  --mon: #ff6b6b;
+  --tue: #ff9f43;
+  --wed: #f9ca24;
+  --thu: #6bcb77;
+  --fri: #4d96ff;
+  --sat: #c77dff;
+  --sun: #ff6eb4;
+  --today: var(--fri);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Animated grid canvas layer */
+#grid-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Nebula glow (kept on top of grid) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 80%, rgba(99,179,255,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 50% at 85% 20%, rgba(199,125,255,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(77,150,255,0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+body::after { content: none; }
+
+.app {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+}
+
+/* ── Header ─────────────────────────────────── */
+.header {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  animation: fadeDown 0.6s ease both;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--blue);
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+}
+
+.brand-tag {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.day-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 6px 14px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+/* ── Setup Screen ────────────────────────────── */
+#setup {
+  width: 100%;
+  max-width: 620px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.setup-headline {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.setup-headline span {
+  color: var(--blue);
+}
+
+.setup-sub {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 2.5rem;
+}
+
+.preset-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.preset-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.preset-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 14px;
+}
+
+.preset-card:hover { border-color: rgba(99,179,255,0.35); transform: translateY(-2px); }
+.preset-card:hover::before { opacity: 1; background: var(--blue-dim); }
+
+.preset-card.active {
+  border-color: var(--blue);
+  background: rgba(99,179,255,0.08);
+  box-shadow: 0 0 24px rgba(99,179,255,0.15), inset 0 0 24px rgba(99,179,255,0.04);
+}
+
+.preset-card.active::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--blue);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 0 12px var(--blue);
+}
+
+.p-num {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.preset-card.active .p-num { color: var(--blue); }
+
+.p-unit {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preset-card.active .p-unit { color: rgba(99,179,255,0.7); }
+
+.custom-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.75rem;
+  transition: border-color 0.2s;
+}
+
+.custom-row:focus-within { border-color: rgba(99,179,255,0.4); }
+
+.custom-row label {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.custom-row input {
+  width: 72px;
+  background: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--blue);
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.custom-row input:focus { border-color: var(--blue); box-shadow: 0 0 12px rgba(99,179,255,0.2); }
+.custom-row input::placeholder { color: var(--muted); font-weight: 400; }
+.custom-row span { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
+
+.go-btn {
+  width: 100%;
+  padding: 1rem;
+  background: var(--blue);
+  color: #06080f;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.go-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.15);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.go-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,179,255,0.4); }
+.go-btn:hover::before { opacity: 1; }
+.go-btn:active { transform: translateY(0); }
+.go-btn:disabled { background: var(--dim); color: var(--muted); cursor: not-allowed; box-shadow: none; transform: none; }
+.go-btn:disabled::before { opacity: 0; }
+
+/* ── Timer Screen ────────────────────────────── */
+#timer {
+  display: none;
+  width: 100%;
+  max-width: 620px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1.75rem;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.back-btn:hover { color: var(--text); }
+.back-btn svg { width: 14px; height: 14px; }
+
+/* Main timer display */
+.timer-stage {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.5rem 2rem 2rem;
+  margin-bottom: 12px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.4s;
+}
+
+.timer-stage::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  opacity: 0.5;
+  transition: opacity 0.4s;
+}
+
+.timer-stage.urgent::before {
+  background: linear-gradient(90deg, transparent, #ff6b6b, transparent);
+  animation: glowPulse 1s ease-in-out infinite;
+  opacity: 1;
+}
+
+.timer-stage.urgent { border-color: rgba(255,107,107,0.3); }
+
+.q-tag {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.time-display {
+  font-size: clamp(5rem, 18vw, 8rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 1.25rem;
+  transition: color 0.4s;
+  text-shadow: 0 0 60px rgba(99,179,255,0.1);
+}
+
+.time-display.urgent { color: #ff6b6b; text-shadow: 0 0 40px rgba(255,107,107,0.2); }
+
+.slow-msg {
+  display: none;
+  background: rgba(255,107,107,0.1);
+  border: 1px solid rgba(255,107,107,0.25);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ff9090;
+  letter-spacing: 0.04em;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Progress bar */
+.prog-wrap {
+  height: 3px;
+  background: var(--dim);
+  border-radius: 99px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.prog-bar {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--blue);
+  box-shadow: 0 0 12px var(--blue);
+  width: 100%;
+  transition: width 0.25s linear, background 0.4s, box-shadow 0.4s;
+}
+
+.prog-bar.urgent { background: #ff6b6b; box-shadow: 0 0 12px #ff6b6b; }
+
+/* Status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+  transition: all 0.25s ease;
+}
+
+.status-pill.idle { background: rgba(139,165,196,0.1); border-color: rgba(139,165,196,0.25); color: var(--muted); }
+.status-pill.running { background: rgba(107,203,119,0.1); border-color: rgba(107,203,119,0.25); color: #6bcb77; }
+.status-pill.done { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.25); color: #ff8080; }
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-pill.running .dot { animation: blink 1s ease infinite; }
+
+/* Hint bar */
+.hint-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 1rem;
+  padding: 10px;
+}
+
+.hint-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+.kbd {
+  display: inline-block;
+  background: var(--dim);
+  border: 1px solid rgba(99,179,255,0.25);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* Stats row */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* History */
+.hist-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.hist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hist-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.hist-count {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue);
+  background: rgba(99,179,255,0.08);
+  padding: 2px 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(99,179,255,0.25);
+}
+
+.hist-empty {
+  padding: 2rem;
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.hist-list {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dim) transparent;
+}
+
+.hist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  animation: fadeIn 0.3s ease both;
+}
+
+.hist-item:last-child { border-bottom: none; }
+
+.hist-idx {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.hist-idx.ok { background: rgba(107,203,119,0.12); color: #6bcb77; border: 1px solid rgba(107,203,119,0.2); }
+.hist-idx.slow { background: rgba(255,107,107,0.12); color: #ff8080; border: 1px solid rgba(255,107,107,0.2); }
+
+.hist-info { flex: 1; }
+
+.hist-main {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.hist-sub {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.hist-tag {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.hist-tag.ok { background: rgba(107,203,119,0.1); color: #6bcb77; border: 1px solid rgba(107,203,119,0.2); }
+.hist-tag.slow { background: rgba(255,107,107,0.1); color: #ff8080; border: 1px solid rgba(255,107,107,0.2); }
+
+/* ── Weekday colors ──────────────────────────── */
+.day-mon { color: var(--mon); border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.08); }
+.day-tue { color: var(--tue); border-color: rgba(255,159,67,0.3); background: rgba(255,159,67,0.08); }
+.day-wed { color: var(--wed); border-color: rgba(249,202,36,0.3); background: rgba(249,202,36,0.08); }
+.day-thu { color: var(--thu); border-color: rgba(107,203,119,0.3); background: rgba(107,203,119,0.08); }
+.day-fri { color: var(--fri); border-color: rgba(77,150,255,0.3); background: rgba(77,150,255,0.08); }
+.day-sat { color: var(--sat); border-color: rgba(199,125,255,0.3); background: rgba(199,125,255,0.08); }
+.day-sun { color: var(--sun); border-color: rgba(255,110,180,0.3); background: rgba(255,110,180,0.08); }
+
+/* ── Animations ──────────────────────────────── */
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+@keyframes glowPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes slowShake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.7); }
+  65%  { transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes cursorBlink {
+  0%,100% { opacity: 1; } 50% { opacity: 0; }
+}
+@keyframes statBump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); color: var(--blue); }
+  100% { transform: scale(1); }
+}
+@keyframes hintFloat {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes emptyPulse {
+  0%,100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+.shake { animation: slowShake 0.4s ease; }
+.stat-bump { animation: statBump 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+.hist-item { animation: slideInLeft 0.3s ease both; }
+.hint-key { animation: hintFloat 3s ease-in-out infinite; }
+.hint-key:last-child { animation-delay: 1.5s; }
+.hist-empty { animation: emptyPulse 2.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<canvas id="grid-canvas"></canvas>
+<div class="app">
+
+  <div class="header">
+    <div class="brand">
+      <span class="brand-name">JEE Timer</span>
+      <span class="brand-tag">// question clock</span>
+    </div>
+    <div class="day-badge" id="day-badge">FRI</div>
+  </div>
+
+  <!-- Setup -->
+  <div id="setup">
+    <h1 class="setup-headline">How long<br>per <span>question?</span></h1>
+    <p class="setup-sub">// select a preset or enter custom duration</p>
+
+    <p class="preset-label">Presets</p>
+    <div class="presets">
+      <div class="preset-card" data-sec="180" onclick="pickPreset(this)">
+        <span class="p-num">3</span><span class="p-unit">min</span>
+      </div>
+      <div class="preset-card" data-sec="240" onclick="pickPreset(this)">
+        <span class="p-num">4</span><span class="p-unit">min</span>
+      </div>
+      <div class="preset-card" data-sec="300" onclick="pickPreset(this)">
+        <span class="p-num">5</span><span class="p-unit">min</span>
+      </div>
+      <div class="preset-card" data-sec="360" onclick="pickPreset(this)">
+        <span class="p-num">6</span><span class="p-unit">min</span>
+      </div>
+    </div>
+
+    <div class="custom-row">
+      <label for="cust">Custom</label>
+      <input type="number" id="cust" min="1" max="60" placeholder="0" oninput="pickCustom()" />
+      <span>minutes</span>
+    </div>
+
+    <button class="go-btn" id="go-btn" disabled onclick="launch()">
+      ↗ Launch Timer
+    </button>
+  </div>
+
+  <!-- Timer -->
+  <div id="timer">
+    <button class="back-btn" onclick="goBack()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13L5 8l5-5"/></svg>
+      Change duration
+    </button>
+
+    <div class="timer-stage" id="stage">
+      <div class="q-tag" id="q-tag">// question 1</div>
+      <div class="time-display" id="time-disp">5:00</div>
+      <div class="slow-msg" id="slow-msg">⚠ time's up — you're running slow</div>
+      <div class="prog-wrap"><div class="prog-bar" id="prog"></div></div>
+      <div><span class="status-pill idle" id="spill"><span class="dot"></span> press space to start</span></div>
+    </div>
+
+    <div class="hint-bar">
+      <div class="hint-key"><span class="kbd">Space</span> submitted — next</div>
+      <div class="hint-key"><span class="kbd">Enter</span> oops — redo this one</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="s-done">0</div><div class="stat-label">attempted</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-slow">0</div><div class="stat-label">over time</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-avg">—</div><div class="stat-label">avg time</div></div>
+    </div>
+
+    <div class="hist-panel">
+      <div class="hist-head">
+        <span class="hist-title">Session history</span>
+        <span class="hist-count" id="hist-count">0</span>
+      </div>
+      <div id="hist-empty" class="hist-empty">No questions yet — press Space to begin</div>
+      <div class="hist-list" id="hist-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DAYS = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_NAMES = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const d = new Date().getDay();
+const badge = document.getElementById('day-badge');
+badge.textContent = DAY_NAMES[d];
+badge.classList.add('day-' + DAYS[d]);
+
+let totalSec = 0, remaining = 0, ticker = null;
+let running = false, qNum = 0, slowCount = 0;
+let history = [], sessionStart = null, startedAt = null;
+
+function pickPreset(el) {
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('cust').value = '';
+  totalSec = +el.dataset.sec;
+  document.getElementById('go-btn').disabled = false;
+}
+
+function pickCustom() {
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  const v = parseInt(document.getElementById('cust').value);
+  if (v >= 1 && v <= 60) { totalSec = v * 60; document.getElementById('go-btn').disabled = false; }
+  else document.getElementById('go-btn').disabled = true;
+}
+
+function launch() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('timer').style.display = 'block';
+  qNum = 0; slowCount = 0; history = [];
+  sessionStart = Date.now();
+  resetQ(false);
+}
+
+function goBack() {
+  clearInterval(ticker); ticker = null; running = false;
+  document.getElementById('timer').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+}
+
+function fmt(s) {
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+
+function setStatus(state) {
+  const p = document.getElementById('spill');
+  p.className = 'status-pill ' + state;
+  if (state === 'idle') p.innerHTML = '<span class="dot"></span> press space to start';
+  else if (state === 'running') p.innerHTML = '<span class="dot"></span> running';
+  else p.innerHTML = '<span class="dot"></span> time\'s up';
+}
+
+function setUrgent(on) {
+  const stage = document.getElementById('stage');
+  const td = document.getElementById('time-disp');
+  const pb = document.getElementById('prog');
+  stage.classList.toggle('urgent', on);
+  td.classList.toggle('urgent', on);
+  pb.classList.toggle('urgent', on);
+}
+
+function resetQ(autoStart) {
+  clearInterval(ticker); ticker = null; running = false;
+  remaining = totalSec; startedAt = null;
+  document.getElementById('slow-msg').style.display = 'none';
+  document.getElementById('time-disp').textContent = fmt(totalSec);
+  document.getElementById('prog').style.width = '100%';
+  setUrgent(false);
+  setStatus('idle');
+  if (autoStart) beginQ();
+}
+
+function beginQ() {
+  qNum++;
+  document.getElementById('q-tag').textContent = '// question ' + qNum;
+  startedAt = Date.now(); running = true;
+  document.getElementById('slow-msg').style.display = 'none';
+  setStatus('running'); setUrgent(false);
+  clearInterval(ticker);
+  ticker = setInterval(() => {
+    remaining--;
+    document.getElementById('time-disp').textContent = fmt(remaining);
+    document.getElementById('prog').style.width = (remaining / totalSec * 100) + '%';
+    if (remaining <= totalSec * 0.25) setUrgent(true);
+    if (remaining <= 0) {
+      clearInterval(ticker); running = false;
+      document.getElementById('time-disp').textContent = '0:00';
+      document.getElementById('prog').style.width = '0%';
+      document.getElementById('slow-msg').style.display = 'block';
+      const stage = document.getElementById('stage');
+      stage.classList.add('shake');
+      setTimeout(() => stage.classList.remove('shake'), 450);
+      setStatus('done');
+      slowCount++;
+      pushHistory(true);
+      setTimeout(() => resetQ(true), 1400);
+    }
+  }, 1000);
+}
+
+function pushHistory(wasSlow) {
+  const elapsed = Math.round((Date.now() - startedAt) / 1000);
+  const rel = Math.round((Date.now() - sessionStart) / 1000);
+  history.push({ q: qNum, elapsed, rel, wasSlow });
+  renderHistory();
+  updateStats();
+}
+
+function animateStat(id, val) {
+  const el = document.getElementById(id);
+  el.classList.remove('stat-bump');
+  void el.offsetWidth;
+  el.textContent = val;
+  el.classList.add('stat-bump');
+  setTimeout(() => el.classList.remove('stat-bump'), 450);
+}
+
+function updateStats() {
+  animateStat('s-done', history.length);
+  animateStat('s-slow', slowCount);
+  const times = history.map(h => h.elapsed);
+  const avgEl = document.getElementById('s-avg');
+  const avg = times.length ? fmt(Math.round(times.reduce((a,b)=>a+b,0)/times.length)) : '—';
+  avgEl.classList.remove('stat-bump'); void avgEl.offsetWidth;
+  avgEl.textContent = avg;
+  avgEl.classList.add('stat-bump');
+  setTimeout(() => avgEl.classList.remove('stat-bump'), 450);
+}
+
+function renderHistory() {
+  const list = document.getElementById('hist-list');
+  const empty = document.getElementById('hist-empty');
+  const countEl = document.getElementById('hist-count');
+  countEl.classList.remove('stat-bump'); void countEl.offsetWidth;
+  countEl.textContent = history.length;
+  countEl.classList.add('stat-bump');
+  setTimeout(() => countEl.classList.remove('stat-bump'), 450);
+  if (!history.length) { empty.style.display = 'block'; list.innerHTML = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = history.slice().reverse().map(h => `
+    <div class="hist-item">
+      <div class="hist-idx ${h.wasSlow ? 'slow' : 'ok'}">${h.q}</div>
+      <div class="hist-info">
+        <div class="hist-main">${h.wasSlow ? 'Time ran out' : 'Submitted in ' + fmt(h.elapsed)}</div>
+        <div class="hist-sub">+${fmt(h.rel)} into session</div>
+      </div>
+      <span class="hist-tag ${h.wasSlow ? 'slow' : 'ok'}">${h.wasSlow ? 'slow' : 'on time'}</span>
+    </div>
+  `).join('');
+}
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('timer').style.display === 'none') return;
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (!running) beginQ();
+    else { pushHistory(false); resetQ(true); }
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    clearInterval(ticker); ticker = null; running = false;
+    remaining = totalSec;
+    document.getElementById('time-disp').textContent = fmt(totalSec);
+    document.getElementById('prog').style.width = '100%';
+    document.getElementById('slow-msg').style.display = 'none';
+    setUrgent(false); setStatus('idle');
+    startedAt = null;
+    beginQ();
+  }
+});
+</script>
+
+<script>
+/* ── Animated Perspective Grid ─────────────────────────────────── */
+(function () {
+  const canvas = document.getElementById('grid-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  /* Config */
+  const COLS        = 14;        // vertical lines
+  const ROWS        = 10;        // horizontal lines
+  const SPEED       = 0.18;      // scroll speed (units/frame)
+  const HORIZON_Y   = 0.46;      // horizon as fraction of canvas height
+  const FOV_WIDTH   = 2.6;       // how wide the grid spreads at horizon (multiplier)
+  const LINE_COLOR  = 'rgba(99,179,255,';
+  const GLOW_COLOR  = 'rgba(99,179,255,0.55)';
+  const DOT_COLOR   = 'rgba(99,179,255,0.7)';
+
+  /* Stars */
+  const STAR_COUNT = 120;
+  const stars = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function initStars() {
+    stars.length = 0;
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x:    Math.random(),
+        y:    Math.random() * HORIZON_Y,    // only above horizon
+        r:    Math.random() * 1.2 + 0.3,
+        a:    Math.random() * 0.7 + 0.2,
+        twinkleSpeed: Math.random() * 0.02 + 0.005,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  resize();
+  initStars();
+  window.addEventListener('resize', () => { resize(); initStars(); });
+
+  let offset = 0;
+  let t      = 0;
+
+  function lerp(a, b, f) { return a + (b - a) * f; }
+
+  /* Map a grid coordinate [0..1] to canvas pixel via perspective */
+  function project(gx, gy, W, H, horizonY) {
+    // gy = 0 → horizon, gy = 1 → bottom of screen
+    const py = lerp(horizonY, H, gy);
+    const spread = lerp(0, W * FOV_WIDTH, gy);
+    const cx = W / 2;
+    const px = cx + (gx - 0.5) * spread;
+    return { x: px, y: py };
+  }
+
+  function drawGrid(W, H) {
+    const horizonY = H * HORIZON_Y;
+
+    /* ---- horizontal lines (scroll by animating offset) ---- */
+    for (let row = 0; row <= ROWS; row++) {
+      // gy goes from 0 (horizon) to 1 (bottom), with scroll offset
+      let gy = ((row + offset) % ROWS) / ROWS;
+      if (gy < 0) gy += 1;
+
+      const alpha = Math.pow(gy, 1.4) * 0.55 + 0.03;
+      const lw    = lerp(0.3, 1.6, gy);
+
+      const p0 = project(0, gy, W, H, horizonY);
+      const p1 = project(1, gy, W, H, horizonY);
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.strokeStyle = LINE_COLOR + alpha + ')';
+      ctx.lineWidth   = lw;
+      ctx.stroke();
+    }
+
+    /* ---- vertical lines ---- */
+    for (let col = 0; col <= COLS; col++) {
+      const gx    = col / COLS;
+      const alpha = 0.04 + 0.22 * (1 - Math.abs(gx - 0.5) * 2);  // brighter in center
+      const lw    = 0.6;
+
+      const top = project(gx, 0,   W, H, horizonY);
+      const bot = project(gx, 1,   W, H, horizonY);
+
+      // Gradient fade: invisible at horizon, visible at bottom
+      const grad = ctx.createLinearGradient(top.x, top.y, bot.x, bot.y);
+      grad.addColorStop(0,   LINE_COLOR + '0)');
+      grad.addColorStop(0.2, LINE_COLOR + alpha + ')');
+      grad.addColorStop(1,   LINE_COLOR + (alpha * 0.6) + ')');
+
+      ctx.beginPath();
+      ctx.moveTo(top.x, top.y);
+      ctx.lineTo(bot.x, bot.y);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = lw;
+      ctx.stroke();
+    }
+
+    /* ---- intersection dots at bottom portion ---- */
+    for (let row = 0; row <= ROWS; row++) {
+      let gy = ((row + offset) % ROWS) / ROWS;
+      if (gy < 0) gy += 1;
+      if (gy < 0.45) continue;   // only lower half
+      for (let col = 0; col <= COLS; col++) {
+        const gx = col / COLS;
+        const p  = project(gx, gy, W, H, horizonY);
+        const r  = lerp(0, 2.2, gy);
+        const a  = lerp(0, 0.55, gy);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = LINE_COLOR + a + ')';
+        ctx.fill();
+      }
+    }
+
+    /* ---- horizon glow line ---- */
+    const hGrad = ctx.createLinearGradient(0, 0, W, 0);
+    hGrad.addColorStop(0,    'rgba(99,179,255,0)');
+    hGrad.addColorStop(0.25, 'rgba(99,179,255,0.08)');
+    hGrad.addColorStop(0.5,  'rgba(99,179,255,0.22)');
+    hGrad.addColorStop(0.75, 'rgba(99,179,255,0.08)');
+    hGrad.addColorStop(1,    'rgba(99,179,255,0)');
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY);
+    ctx.lineTo(W, horizonY);
+    ctx.strokeStyle = hGrad;
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    /* ---- horizon glow bloom ---- */
+    const bloom = ctx.createLinearGradient(0, horizonY - 60, 0, horizonY + 60);
+    bloom.addColorStop(0,   'rgba(99,179,255,0)');
+    bloom.addColorStop(0.5, 'rgba(99,179,255,0.04)');
+    bloom.addColorStop(1,   'rgba(99,179,255,0)');
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, horizonY - 60, W, 120);
+  }
+
+  function drawStars(W, H) {
+    for (const s of stars) {
+      s.phase += s.twinkleSpeed;
+      const a = s.a * (0.55 + 0.45 * Math.sin(s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fill();
+    }
+  }
+
+  function draw() {
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    drawStars(W, H);
+    drawGrid(W, H);
+
+    offset = (offset + SPEED / ROWS) % 1;
+    t++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+</script>
+</body>
+</html>
