@@ -7,16 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
 :root {
-  --bg: #06080f;
-  --surface: #0c1120;
-  --surface2: #111827;
-  --border: rgba(99,179,255,0.12);
-  --glow: rgba(99,179,255,0.18);
-  --blue: #63b3ff;
-  --blue-dim: rgba(99,179,255,0.08);
-  --text: #e8edf8;
-  --muted: #8ba5c4;
-  --dim: #1e2a3a;
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface2: #1a1a1a;
+  --border: #2a2010;
+  --glow: rgba(255,119,0,0.18);
+  --blue: #ff7700;
+  --blue-dim: rgba(255,119,0,0.08);
+  --text: #f0ece0;
+  --muted: #806040;
+  --dim: #1a1200;
 
   --mon: #ff6b6b;
   --tue: #ff9f43;
@@ -57,9 +57,9 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 80%, rgba(99,179,255,0.07) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 50% at 85% 20%, rgba(199,125,255,0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(77,150,255,0.04) 0%, transparent 70%);
+    radial-gradient(ellipse 60% 40% at 15% 80%, rgba(255,119,0,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 50% at 85% 20%, rgba(255,140,0,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(255,100,0,0.04) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
 }
@@ -191,13 +191,13 @@ body::after { content: none; }
   border-radius: 14px;
 }
 
-.preset-card:hover { border-color: rgba(99,179,255,0.35); transform: translateY(-2px); }
+.preset-card:hover { border-color: rgba(255,119,0,0.35); transform: translateY(-2px); }
 .preset-card:hover::before { opacity: 1; background: var(--blue-dim); }
 
 .preset-card.active {
   border-color: var(--blue);
-  background: rgba(99,179,255,0.08);
-  box-shadow: 0 0 24px rgba(99,179,255,0.15), inset 0 0 24px rgba(99,179,255,0.04);
+  background: rgba(255,119,0,0.08);
+  box-shadow: 0 0 24px rgba(255,119,0,0.15), inset 0 0 24px rgba(255,119,0,0.04);
 }
 
 .preset-card.active::after {
@@ -229,7 +229,7 @@ body::after { content: none; }
   text-transform: uppercase;
 }
 
-.preset-card.active .p-unit { color: rgba(99,179,255,0.7); }
+.preset-card.active .p-unit { color: rgba(255,119,0,0.7); }
 
 .custom-row {
   display: flex;
@@ -243,7 +243,7 @@ body::after { content: none; }
   transition: border-color 0.2s;
 }
 
-.custom-row:focus-within { border-color: rgba(99,179,255,0.4); }
+.custom-row:focus-within { border-color: rgba(255,119,0,0.4); }
 
 .custom-row label {
   font-family: 'Syne', sans-serif;
@@ -269,7 +269,7 @@ body::after { content: none; }
   transition: border-color 0.2s;
 }
 
-.custom-row input:focus { border-color: var(--blue); box-shadow: 0 0 12px rgba(99,179,255,0.2); }
+.custom-row input:focus { border-color: var(--blue); box-shadow: 0 0 12px rgba(255,119,0,0.2); }
 .custom-row input::placeholder { color: var(--muted); font-weight: 400; }
 .custom-row span { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
 
@@ -277,7 +277,7 @@ body::after { content: none; }
   width: 100%;
   padding: 1rem;
   background: var(--blue);
-  color: #06080f;
+  color: #1a0800;
   border: none;
   border-radius: 14px;
   font-family: 'Syne', sans-serif;
@@ -299,7 +299,7 @@ body::after { content: none; }
   transition: opacity 0.2s;
 }
 
-.go-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,179,255,0.4); }
+.go-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,119,0,0.4); }
 .go-btn:hover::before { opacity: 1; }
 .go-btn:active { transform: translateY(0); }
 .go-btn:disabled { background: var(--dim); color: var(--muted); cursor: not-allowed; box-shadow: none; transform: none; }
@@ -384,7 +384,7 @@ body::after { content: none; }
   font-variant-numeric: tabular-nums;
   margin-bottom: 1.25rem;
   transition: color 0.4s;
-  text-shadow: 0 0 60px rgba(99,179,255,0.1);
+  text-shadow: 0 0 60px rgba(255,119,0,0.1);
 }
 
 .time-display.urgent { color: #ff6b6b; text-shadow: 0 0 40px rgba(255,107,107,0.2); }
@@ -476,7 +476,7 @@ body::after { content: none; }
 .kbd {
   display: inline-block;
   background: var(--dim);
-  border: 1px solid rgba(99,179,255,0.25);
+  border: 1px solid rgba(255,119,0,0.25);
   border-radius: 5px;
   padding: 3px 10px;
   font-family: 'Space Mono', monospace;
@@ -549,10 +549,10 @@ body::after { content: none; }
   font-size: 13px;
   font-weight: 700;
   color: var(--blue);
-  background: rgba(99,179,255,0.08);
+  background: rgba(255,119,0,0.08);
   padding: 2px 10px;
   border-radius: 99px;
-  border: 1px solid rgba(99,179,255,0.25);
+  border: 1px solid rgba(255,119,0,0.25);
 }
 
 .hist-empty {
@@ -950,9 +950,9 @@ document.addEventListener('keydown', e => {
   const SPEED       = 0.18;      // scroll speed (units/frame)
   const HORIZON_Y   = 0.46;      // horizon as fraction of canvas height
   const FOV_WIDTH   = 2.6;       // how wide the grid spreads at horizon (multiplier)
-  const LINE_COLOR  = 'rgba(99,179,255,';
-  const GLOW_COLOR  = 'rgba(99,179,255,0.55)';
-  const DOT_COLOR   = 'rgba(99,179,255,0.7)';
+  const LINE_COLOR  = 'rgba(255,119,0,';
+  const GLOW_COLOR  = 'rgba(255,119,0,0.55)';
+  const DOT_COLOR   = 'rgba(255,119,0,0.7)';
 
   /* Stars */
   const STAR_COUNT = 120;
@@ -1061,11 +1061,11 @@ document.addEventListener('keydown', e => {
 
     /* ---- horizon glow line ---- */
     const hGrad = ctx.createLinearGradient(0, 0, W, 0);
-    hGrad.addColorStop(0,    'rgba(99,179,255,0)');
-    hGrad.addColorStop(0.25, 'rgba(99,179,255,0.08)');
-    hGrad.addColorStop(0.5,  'rgba(99,179,255,0.22)');
-    hGrad.addColorStop(0.75, 'rgba(99,179,255,0.08)');
-    hGrad.addColorStop(1,    'rgba(99,179,255,0)');
+    hGrad.addColorStop(0,    'rgba(255,119,0,0)');
+    hGrad.addColorStop(0.25, 'rgba(255,119,0,0.08)');
+    hGrad.addColorStop(0.5,  'rgba(255,119,0,0.22)');
+    hGrad.addColorStop(0.75, 'rgba(255,119,0,0.08)');
+    hGrad.addColorStop(1,    'rgba(255,119,0,0)');
     ctx.beginPath();
     ctx.moveTo(0, horizonY);
     ctx.lineTo(W, horizonY);
@@ -1075,9 +1075,9 @@ document.addEventListener('keydown', e => {
 
     /* ---- horizon glow bloom ---- */
     const bloom = ctx.createLinearGradient(0, horizonY - 60, 0, horizonY + 60);
-    bloom.addColorStop(0,   'rgba(99,179,255,0)');
-    bloom.addColorStop(0.5, 'rgba(99,179,255,0.04)');
-    bloom.addColorStop(1,   'rgba(99,179,255,0)');
+    bloom.addColorStop(0,   'rgba(255,119,0,0)');
+    bloom.addColorStop(0.5, 'rgba(255,119,0,0.04)');
+    bloom.addColorStop(1,   'rgba(255,119,0,0)');
     ctx.fillStyle = bloom;
     ctx.fillRect(0, horizonY - 60, W, 120);
   }
